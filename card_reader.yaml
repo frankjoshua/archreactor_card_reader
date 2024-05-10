@@ -1,0 +1,83 @@
+esphome:
+  name: card_reader
+
+esp8266:
+  board: nodemcuv2
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: ""
+
+ota:
+  password: ""
+
+wifi:
+  ssid: !secret ssid
+  password: !secret wifi_pass
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "card_reader Fallback Hotspot"
+    password: "12345678"
+
+captive_portal:
+
+globals:
+    - id: last_scanned_id
+      type: "std::string"
+      restore_value: no
+      initial_value: "\"Tap Card\""
+
+i2c:
+  sda: D2
+  scl: D1
+  frequency: 400kHz
+
+font:
+  - id: hack_large
+    file: "Hack-Regular.ttf"
+    size: 25 
+  - id: hack
+    file: "Hack-Regular.ttf"
+    size: 20 
+  - id: hack15
+    file: "Hack-Regular.ttf"
+    size: 15 
+  - id: hack10
+    file: "Hack-Regular.ttf"
+    size: 10 
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    address: 0x3C
+    update_interval: 1s
+    lambda: |-
+      if (id(last_scanned_id).length() <= 8) {
+        it.print(64, 32, id(hack_large), TextAlign::CENTER, id(last_scanned_id).c_str());
+      } else if (id(last_scanned_id).length() <= 11) {
+        it.print(64, 32, id(hack), TextAlign::CENTER, id(last_scanned_id).c_str());
+      } else if (id(last_scanned_id).length() <= 14) {
+        it.print(64, 32, id(hack15), TextAlign::CENTER, id(last_scanned_id).c_str());
+      } else {
+        it.print(64, 32, id(hack10), TextAlign::CENTER, id(last_scanned_id).c_str());
+      }
+      
+
+external_components:
+  - source:
+        type: local
+        path: ./components
+
+wiegand_reader:
+  - id: reader
+    d0: D6
+    d1: D5
+    on_tag:
+      - lambda: |-
+          ESP_LOGD("reader", "Read tag %s", x.c_str());
+          id(last_scanned_id) = x;
+    
