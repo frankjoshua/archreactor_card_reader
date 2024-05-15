@@ -25,6 +25,8 @@ wifi:
 
 captive_portal:
 
+web_server:
+
 globals:
     - id: last_scanned_id
       type: "std::string"
